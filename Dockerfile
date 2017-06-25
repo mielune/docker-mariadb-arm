@@ -1,0 +1,16 @@
+FROM hypriot/rpi-alpine
+
+ENV MARIADB_USERNAME "root"
+ENV MARIADB_PASSWORD "mypassword"
+RUN apk --update add --no-cache mariadb mysql-client && \
+    rm -f /var/cache/apk/* && \
+    mkdir -p /run/mysqld && chown mysql:mysql /run/mysqld && \
+    mysql_install_db --user=mysql
+
+VOLUME ["/var/lib/mysql"]
+
+EXPOSE 3306
+CMD su -s /bin/sh mysql -c "/usr/bin/mysqld_safe --datadir='/var/lib/mysql'" \
+    && /usr/bin/mysqladmin -u $MARIADB_USERNAME password "$MARIADB_PASSWORD" \
+    && /usr/bin/mysql -u $MARIADB_USERNAME --password=$MARIADB_PASSWORD -e "CREATE USER '$MARIADB_USERNAME'@'%' IDENTIFIED BY '$MARIADB_PASSWORD';" \
+    && /usr/bin/mysql -u $MARIADB_USERNAME --password=$MARIADB_PASSWORD -e "GRANT ALL ON *.* to root@'%'; FLUSH PRIVILEGES;"
